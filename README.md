@@ -21,7 +21,7 @@ In this project, I wish to implement the A3C3 paper:
 This creates a virtual environment for the project for a specific python version, in this case `python 3.11.1`. Note that it assumes you have already downloaded and installed the version you want to use.
 
 ```python
-C:\Users\yusup\AppData\Local\Programs\Python\Python36\python.exe -m venv a3c3_311
+C:\user\path\to\Python311\python.exe -m venv a3c3_311
 ```
 
 To activate the `virtual environment`:
@@ -41,6 +41,36 @@ To deactivate it:
 ```python
 deactivate
 ```
+
+## Run
+
+To run the script (assuming that you are in the A3C3 dir), activate the virtual environment, paste the command line arguments below.
+
+- to test the model with the currently saved pretrained model:
+
+  ```bash
+  python.exe main.py --num_workers=1 --num_agents=2 --comm_size=20 --critic=0 --max_epis=5_0 --save_dir="models" --comm_gaussian_noise=0.0 --comm_delivery_failure_chance=0.0 --comm_jumble_chance=0.0 --param_search='40,relu,80,40' --test --load_model
+  ```
+
+- to further train the model with the already saved weights:
+
+  ```bash
+  python.exe main.py --num_workers=5 --num_agents=2 --comm_size=20 --critic=0 --max_epis=1_000_000 --save_dir="models" --comm_gaussian_noise=0.0 --comm_delivery_failure_chance=0.0 --comm_jumble_chance=0.0 --param_search='40,relu,80,40' --load_model
+  ```
+
+- to train the model completely from scratch:
+
+  ```bash
+  python.exe main.py --num_workers=5 --num_agents=2 --comm_size=20 --critic=0 --max_epis=1_000_000 --save_dir="models" --comm_gaussian_noise=0.0 --comm_delivery_failure_chance=0.0 --comm_jumble_chance=0.0 --param_search='40,relu,80,40'
+  ```
+
+You can try different combinations of hyperparameters/arguments, too.
+
+### Run Bash script
+
+- Activate the virtual environment as before.
+- Open a bash shell (or just type `bash` command on `vscode`).
+- Run bash shell. E.g., to run `nav_args_1.sh`, do: `./nav_args_1.sh`
 
 ## Install libraries
 
