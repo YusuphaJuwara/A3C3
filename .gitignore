@@ -1,0 +1,5 @@
+myenv/
+__pycache__
+/delete.py
+/worker_*
+models-*
