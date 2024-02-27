@@ -818,14 +818,13 @@ class Worker:
         # Clip gradients in the global network to prevent exploding gradients.
         torch.nn.utils.clip_grad_norm_(parameters=self.global_AC.parameters(), max_norm=10)
         
-        logger.info(f"""--------------------------------
-                    \ncomm_fn weight grads: {self.local_AC.comm_fn[0].weight.grad}
-                    \nhidden_comm weight grads: self.local_AC.hidden_comm[0].weight.grad
-                    \npolicy weight grads: {self.local_AC.policy[0].weight.grad}
-                    \nvalue weight grads: {self.local_AC.value.weight.grad}
-                    \nmsg grads: {msg.grad}
-                    \ncurr_comm grads: {curr_comm.grad}
-                    \n--------------------------------""")
+        # logger.info(f"""--------------------------------
+        #             \ncomm_fn weight grads: {self.local_AC.comm_fn[0].weight.grad}
+        #             \npolicy weight grads: {self.local_AC.policy[0].weight.grad}
+        #             \nvalue weight grads: {self.local_AC.value.weight.grad}
+        #             \nmsg grads: {msg.grad}
+        #             \ncurr_comm grads: {curr_comm.grad}
+        #             \n--------------------------------""")
         
         # RuntimeError: One of the differentiated Tensors appears to not have been used in the graph. 
         # Set allow_unused=True if this is the desired behavior.

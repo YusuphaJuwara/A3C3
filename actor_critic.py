@@ -173,20 +173,14 @@ class AC_Network(nn.Module):
         self.policy = BaseNetwork(in_features=s, out_features=a_size, activation=nn.Softmax)
 
         # only state as input
-        # self.hidden_comm = BaseNetwork(in_features=s_size[0], out_features=paramSearch[0], activation=activation)
-
-        # if comm_size_output != 0:
-        #     self.comm_fn = BaseNetwork(in_features=paramSearch[0], out_features=comm_size_output, activation=nn.Tanh)
-        # else:
-        #     self.comm_fn = nn.Linear(in_features=paramSearch[0], out_features=comm_size_output)
-            
+        # self.comm_fn = nn.Sequential(
+        #     BaseNetwork(in_features=s_size[0], out_features=paramSearch[0], activation=activation),
+        #     BaseNetwork(in_features=paramSearch[0], out_features=comm_size_output, activation=nn.Tanh)
+        # )
+        
         # only state as input
-        self.hidden_comm = nn.Sequential(
-            nn.Linear(in_features=s_size[0], out_features=paramSearch[0]),
-            nn.Tanh()
-        )
         self.comm_fn = nn.Sequential(
-            nn.Linear(in_features=paramSearch[0], out_features=comm_size_output),
+            nn.Linear(in_features=s_size[0], out_features=comm_size_output),
             nn.Tanh()
         )
             
@@ -321,11 +315,8 @@ class AC_Network(nn.Module):
         >>> obs = torch.tensor([[4, 2, 11, 1, 2, 12], [9, 12, 11, 1, 2, 12]])
         >>> msg_out = self.getMessage(obs)
         ```
-        """
-        hidden_msg = self.hidden_comm(obs)
-        msg_out = self.comm_fn(hidden_msg)
-        
-        return msg_out
+        """        
+        return self.comm_fn(obs)
     
     def action_prob_entropy(self, 
                 obs: torch.Tensor, 
@@ -409,84 +400,6 @@ class AC_Network(nn.Module):
         self.load_state_dict(torch.load(model_name))
         logger.info(f"\nCheckpoint loaded from {model_name}!!\n")
 
-# if __name__ == "__main__":
-    
-#     paramSearch = [40,"relu",80,40]
-    
-#     # obs: List[List[int]] = [[4, 2, 11, 1, 2, 12], [9, 12, 11, 1, 2, 12]]
-#     # OBS: List[List[int]] = [[4, 2, 9, 12, 11, 1, 2, 12], [4, 2, 9, 12, 11, 1, 2, 12]]
-#     # msg: List[Union[float, int]] = [[-0.9992495, 0.19028412], [-0.99989754, -0.22812036]]
-    
-#     from gym_env import GymNav
-#     import torch
-#     number_of_agents = 3
-#     comm_size_input = 2
-#     env = GymNav(number_of_agents=number_of_agents)
-#     state_size = env.agent_observation_space
-#     s_size_central = env.central_observation_space
-#     action_size = env.agent_action_space
-#     reward_range = env.reward_range
-#     env.close()
-    
-#     logger.info(f"""\nState size: {state_size}
-#                  \ns_size_central: {s_size_central}
-#                  \naction_size: {action_size}
-#                  \nreward_range: {reward_range}\n
-#                  """)
-    
-#     obs, info = env.reset()
-#     obs = torch.tensor(obs, dtype=torch.float)
-#     OBS = info["state_central"]
-#     OBS = torch.tensor(OBS, dtype=torch.float)
-#     msg = torch.rand(size=(number_of_agents, comm_size_input))
-    
-#     logger.info(f"obs: {obs} \nOBS: {OBS}")
-    
-#     # global_agents = AC_Network()
-#     global_agents = AC_Network( s_size=state_size,
-#                                 s_size_central=s_size_central,
-#                                 number_of_agents=number_of_agents,
-#                                 a_size=action_size,
-#                                 comm_size_input=comm_size_input,
-#                                 comm_size_output=comm_size_input,
-#                                 critic_action=False,
-#                                 critic_comm=False,
-#                                 paramSearch=paramSearch
-#                                 )
-            
-#     policy, value, msg_out = global_agents.forward(obs=obs, 
-#                                                     OBS=OBS, 
-#                                                     msg=msg
-#                                                     )
-
-#     logger.info(f"""
-#                  \n policy: {policy}
-#                  \n value: {value}
-#                  \n msg_out: {msg_out}
-#                  """)
-    
-        # actions, log_probs, entropy = global_agents.action_prob_entropy(obs=obs, curr_comm=msg, eval_model=False)
-
-        # logger.info(f"\nactions: {actions}\nlog_probs: {log_probs}\nentropy: {entropy}\n")
-        
-def mapMsg(msg, num_agents):
-    curr_comm = []
-    for i in range(num_agents):
-        cat_tns = torch.cat((msg[:i].reshape(-1), msg[i+1:].reshape(-1)), dim=0)
-        curr_comm.append(cat_tns)
-        
-    return torch.stack(curr_comm, dim=0)
-
-def output_mess_to_input_mess(message, number_of_agents) :
-    curr_comm = []
-    
-    # msg = [[msg_size], [msg_size], ..., [msg_size]]
-    for i in range(number_of_agents):
-        cat_tns = torch.cat((message[:i].reshape(-1), message[i+1:].reshape(-1)), dim=0)
-        curr_comm.append(cat_tns) 
-    
-    return torch.stack(curr_comm, dim=0)
-        
 if __name__ == "__main__":
     
     paramSearch = [40,"relu",80,40]
@@ -506,7 +419,7 @@ if __name__ == "__main__":
     reward_range = env.reward_range
     env.close()
     
-    logger.debug(f"""\nState size: {state_size}
+    logger.info(f"""\nState size: {state_size}
                  \ns_size_central: {s_size_central}
                  \naction_size: {action_size}
                  \nreward_range: {reward_range}\n
@@ -514,6 +427,8 @@ if __name__ == "__main__":
     
     obs_env, info = env.reset()
     obs = torch.tensor(obs_env, dtype=torch.float)
+    OBS = info["state_central"]
+    OBS = torch.tensor(OBS, dtype=torch.float)
     msg = torch.rand(size=(number_of_agents, comm_size), dtype=torch.float)
     
     comm_size_input = (number_of_agents - 1) * comm_size
@@ -528,22 +443,28 @@ if __name__ == "__main__":
                                 paramSearch=paramSearch
                                 )
     
-    # def output_mess_to_input_mess(message) :
-    #     curr_comm = []
+    def output_mess_to_input_mess(message) :
+        curr_comm = []
         
-    #     # msg = [[msg_size], [msg_size], ..., [msg_size]]
-    #     for i in range(number_of_agents):
-    #         cat_tns = torch.cat((message[:i].reshape(-1), message[i+1:].reshape(-1)), dim=0)
-    #         curr_comm.append(cat_tns) 
+        # msg = [[msg_size], [msg_size], ..., [msg_size]]
+        for i in range(number_of_agents):
+            cat_tns = torch.cat((message[:i].reshape(-1), message[i+1:].reshape(-1)), dim=0)
+            curr_comm.append(cat_tns) 
+            
+        curr_comm = torch.stack(curr_comm, dim=0)
+        logger.debug(f"\n output_mess_to_input_mess: \n curr_comm: {curr_comm}")
         
-    #     return torch.stack(curr_comm, dim=0)
+        return curr_comm
     
     optim = torch.optim.Adam(global_agents.parameters())
     for i in range(5):
         msg_out = global_agents.getMessage(obs=obs)
-        curr_comm = output_mess_to_input_mess(msg_out, number_of_agents)
-        # curr_comm = torch.rand_like(curr_comm_1, dtype=torch.float, requires_grad=True)
+        curr_comm = output_mess_to_input_mess(msg_out)
+        
+        policy, value, m_out = global_agents.forward(obs=obs, OBS=OBS, msg=curr_comm)
         actions, log_probs, entropy = global_agents.action_prob_entropy(obs=obs, curr_comm=curr_comm)
+        logger.debug(f"""\n policy: {policy} \n value: {value} \n msg_out: {m_out}""")
+        logger.debug(f"""\n actions: {actions} \n log_probs: {log_probs} \n entropy: {entropy}""")
         
         logger.info(f"\n curr_comm: {curr_comm}\n")
         
