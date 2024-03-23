@@ -87,9 +87,17 @@ class GymNav(gym.Env):
         self.timer = 0
         return self.get_state(), {"state_central": self.get_state_central()}
     
-    def step_original(self, action):
+    def step(self, action):
+        """_summary_: original step method
+
+        Args:
+            action (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         reward = 0
-        for i, action in enumerate(action):
+        for i, a in enumerate(action):
             mov = self.decode_action(a)
             self.pos[i][0] = (self.pos[i][0] + mov[0]) % self.map_size
             self.pos[i][1] = (self.pos[i][1] + mov[1]) % self.map_size
@@ -108,7 +116,7 @@ class GymNav(gym.Env):
 
         return self.get_state(), reward, terminal, {"state_central": self.get_state_central()}
 
-    def step(self, action):
+    def step_mine(self, action):
         reward = 0
         for i, a in enumerate(action):
             mov = self.decode_action(a)

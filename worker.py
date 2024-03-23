@@ -16,6 +16,8 @@ from torch import Tensor
 # from torch.distributions import normal
 from torch.utils.tensorboard import SummaryWriter
 
+import torch.multiprocessing as mp
+
 from actor_critic import AC_Network
 from gym_env import GymNav
 from helper import one_hot_encoding
@@ -242,7 +244,6 @@ class Worker:
         ```python
         worker_threads = []
         
-        # Remember the worker in the __init__ method?
         for worker in workers:
             worker_work = lambda: worker.work()
             t = threading.Thread(target=(worker_work))
@@ -257,6 +258,12 @@ class Worker:
         """
         
         logger.info("Starting worker " + str(self.number))
+        
+        # define the num of threads used in current sub-processes.
+        # This ensures that each sub-process doesn't create 
+        # so many threads to overwhelm the available cpus.
+        # (N/M) means N cpus and M sub-processes
+        # torch.set_num_threads(int(n_workers//n_workers))
 
         while self.global_episodes.value < self.max_num_of_episodes:
             
@@ -345,7 +352,7 @@ class Worker:
                         arrayed_current_screen_central[agent] = \
                             arrayed_current_screen_central[agent] + curr_comm[agent] 
                     
-                # TODO: handle this part
+                # TODO: comm failure
                 # this_turns_comm_map = []
                 # for i in range(self.number_of_agents):
                 #     # 50% chance of no comms
@@ -410,7 +417,7 @@ class Worker:
                         loss = self.calc_losses(agent, terminal_len)
                     
                         # Update the global network with losses   
-                        self.update_network(loss, message, curr_comm)
+                        self.update_network(loss)
                         
                         # Save statistics for TensorBoard
                         self.episode_loss.append(loss.detach().numpy())
@@ -787,7 +794,7 @@ class Worker:
         
         return loss
         
-    def update_network(self, loss: Tensor, msg, curr_comm):
+    def update_network(self, loss: Tensor):
         """Updates the global network with the loss, then clips the weights in the global network.
         
         Args:
@@ -822,8 +829,6 @@ class Worker:
         #             \ncomm_fn weight grads: {self.local_AC.comm_fn[0].weight.grad}
         #             \npolicy weight grads: {self.local_AC.policy[0].weight.grad}
         #             \nvalue weight grads: {self.local_AC.value.weight.grad}
-        #             \nmsg grads: {msg.grad}
-        #             \ncurr_comm grads: {curr_comm.grad}
         #             \n--------------------------------""")
         
         # RuntimeError: One of the differentiated Tensors appears to not have been used in the graph. 
@@ -895,7 +900,10 @@ class Worker:
         #              """)
 
         # return curr_comm
-                
+        
+        ########################################################################
+        # I use the Broadcast, where each agent sends a msg to each other agent.
+        
         curr_comm = []
         
         # msg = [[msg_size], [msg_size], ..., [msg_size]]

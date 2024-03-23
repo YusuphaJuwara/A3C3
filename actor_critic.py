@@ -175,6 +175,7 @@ class AC_Network(nn.Module):
         # only state as input
         # self.comm_fn = nn.Sequential(
         #     BaseNetwork(in_features=s_size[0], out_features=paramSearch[0], activation=activation),
+        #     BaseNetwork(in_features=paramSearch[0], out_features=paramSearch[0], activation=activation),
         #     BaseNetwork(in_features=paramSearch[0], out_features=comm_size_output, activation=nn.Tanh)
         # )
         
